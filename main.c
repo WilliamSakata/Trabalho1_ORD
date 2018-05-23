@@ -10,7 +10,7 @@ void menu(int opcao, FILE *arq, FILE *reg);
 void importacao(FILE *arq, FILE *reg);
 //void insercao(FILE *arq);
 //void remocao(FILE *arq);
-int readfield(FILE *arq, FILE *reg, char str[]);
+int readfield(FILE *arq, char str[]);
 
 int main(){
     int opcao;
@@ -51,14 +51,17 @@ void menu(int opcao, FILE *arq, FILE *reg){
   }
 }
 */
-int readfield(FILE *arq, FILE *reg, char str[]){  //le o arquivo dados inline e determina o tamanho do campo entre os pipes e salva o que foi lido na string str e retorna o tamanho do campo
+int readfield(FILE *arq, char str[]){  //le o arquivo dados inline e determina o tamanho do campo entre os pipes e salva o que foi lido na string str e retorna o tamanho do campo
     int i;
-    char ch;
+    int ch;
 
+    printf("\nEntrou readfile\n");
     i=0;
     ch = fgetc(arq);
+    printf("\npassou fgetc\n");
 
     while (ch != '|' && ch != EOF){
+        printf("\nentrou while readfile\n");
         str[i]=ch;
         i++;
         ch=fgetc(arq);
@@ -66,7 +69,10 @@ int readfield(FILE *arq, FILE *reg, char str[]){  //le o arquivo dados inline e 
 
     str[i] = '\0';
 
-    return i;
+    if(ch == EOF)
+        return 0;
+    else
+        return i;
 }
 /*
 void escreve_campo(char *str, FILE *reg){
@@ -89,21 +95,20 @@ void importacao(FILE *arq, FILE *reg){
 
     if(reg == NULL){
         reg = fopen("Arq-reg.txt", "w");
-    }
-    else{
+    } else{
         fclose(reg);
-        fopen("Arq-reg.txt", "w");
+        reg = fopen("Arq-reg.txt", "w");
     }
+
 
     fwrite("0", sizeof(int), 1, reg); //escreve a LED no inicio do arquivo
 
-    tam_campo = readfield(arq, reg, num_insc);
+    tam_campo = readfield(arq, num_insc);
 
     while (tam_campo > 0) {   //transcreve o arquivo dados inline para o arquivo de registro
-
-        tam_campo = readfield(arq, reg, nome);
-        tam_campo = readfield(arq, reg, curso);
-        tam_campo = readfield(arq, reg, nota);
+        tam_campo = readfield(arq, nome);
+        tam_campo = readfield(arq, curso);
+        tam_campo = readfield(arq, nota);
 
         concatena(buffer, num_insc);
         concatena(buffer, nome);
@@ -116,7 +121,9 @@ void importacao(FILE *arq, FILE *reg){
 
         fputs(buffer, reg);
 
-        tam_campo = readfield(arq, reg, num_insc);
+        buffer[0] = '\0';
+
+        tam_campo = readfield(arq, num_insc);
     }
 
 }
