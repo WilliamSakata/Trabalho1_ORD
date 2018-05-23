@@ -25,6 +25,9 @@ int main(){
     reg = fopen("Arq-reg.txt", "w");
 
     importacao(arq, reg);
+
+    fclose(arq);
+    fclose(reg);
 }
 /*
 void menu(int opcao, FILE *arq, FILE *reg){
@@ -55,7 +58,7 @@ int readfield(FILE *arq, FILE *reg, char str[]){  //le o arquivo dados inline e 
     i=0;
     ch = fgetc(arq);
 
-    while (ch != pipe && ch != EOF){
+    while (ch != '|' && ch != EOF){
         str[i]=ch;
         i++;
         ch=fgetc(arq);
@@ -92,7 +95,7 @@ void importacao(FILE *arq, FILE *reg){
         fopen("Arq-reg.txt", "w");
     }
 
-    fwrite('0', sizeof(int), 1, reg); //escreve a LED no inicio do arquivo
+    fwrite("0", sizeof(int), 1, reg); //escreve a LED no inicio do arquivo
 
     tam_campo = readfield(arq, reg, num_insc);
 
@@ -107,7 +110,7 @@ void importacao(FILE *arq, FILE *reg){
         concatena(buffer, curso);
         concatena(buffer, nota);
 
-        tam_campo = srtlen(buffer);
+        tam_campo = strlen(buffer);
 
         fwrite(&tam_campo, sizeof(int), 1, reg);
 
