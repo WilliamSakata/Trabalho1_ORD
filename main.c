@@ -55,13 +55,10 @@ int readfield(FILE *arq, char str[]){  //le o arquivo dados inline e determina o
     int i;
     int ch;
 
-    printf("\nEntrou readfile\n");
     i=0;
     ch = fgetc(arq);
-    printf("\npassou fgetc\n");
 
     while (ch != '|' && ch != EOF){
-        printf("\nentrou while readfile\n");
         str[i]=ch;
         i++;
         ch=fgetc(arq);
@@ -69,7 +66,7 @@ int readfield(FILE *arq, char str[]){  //le o arquivo dados inline e determina o
 
     str[i] = '\0';
 
-    if(ch == EOF)
+    if(feof(arq))
         return 0;
     else
         return i;
@@ -86,8 +83,8 @@ void concatena(char *primeiro, char *segundo){
 }
 
 void importacao(FILE *arq, FILE *reg){
-    char num_insc[10], nome[50], curso[25], nota[5], buffer[100];
-    int tam_campo;
+    char numero[15], nome[50], curso[25], nota[5], buffer[100];
+    int tam_campo, num_insc;
 
     if(arq == NULL){
         arq = fopen("Dados-inline.txt", "r");
@@ -103,17 +100,28 @@ void importacao(FILE *arq, FILE *reg){
 
     fwrite("0", sizeof(int), 1, reg); //escreve a LED no inicio do arquivo
 
-    tam_campo = readfield(arq, num_insc);
+    //tam_campo = readfield(arq, num_insc);
+
+    fscanf(arq, "%d", &num_insc);
+
+    tam_campo = num_insc;
 
     while (tam_campo > 0) {   //transcreve o arquivo dados inline para o arquivo de registro
         tam_campo = readfield(arq, nome);
         tam_campo = readfield(arq, curso);
         tam_campo = readfield(arq, nota);
 
-        concatena(buffer, num_insc);
+        sprintf(numero,"%d", num_insc);
+
+        concatena(buffer, numero);
         concatena(buffer, nome);
         concatena(buffer, curso);
         concatena(buffer, nota);
+
+        nota[0] = '\0';
+        curso[0]= '\0';
+        nome[0]='\0';
+        numero[0]='\0';
 
         tam_campo = strlen(buffer);
 
@@ -123,7 +131,10 @@ void importacao(FILE *arq, FILE *reg){
 
         buffer[0] = '\0';
 
-        tam_campo = readfield(arq, num_insc);
+        num_insc = 0;
+
+        fscanf(arq, "%i", &num_insc);
+        tam_campo = num_insc;
     }
 
 }
