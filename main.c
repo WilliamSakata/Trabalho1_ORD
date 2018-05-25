@@ -53,7 +53,7 @@ void menu(int opcao, FILE *arq, FILE *reg){
 */
 int readfield(FILE *arq, char str[]){  //le o arquivo dados inline e determina o tamanho do campo entre os pipes e salva o que foi lido na string str e retorna o tamanho do campo
     int i;
-    int ch;
+    char ch;
 
     i=0;
     ch = fgetc(arq);
@@ -83,9 +83,9 @@ void concatena(char *primeiro, char *segundo){
 }
 
 void importacao(FILE *arq, FILE *reg){
-    char numero[15], nome[50], curso[25], nota[5], buffer[100];
+    char numero[20], nome[50], curso[25], buffer[100];
     int tam_campo, num_insc;
-
+    long int nota;
     if(arq == NULL){
         arq = fopen("Dados-inline.txt", "r");
     }
@@ -98,34 +98,47 @@ void importacao(FILE *arq, FILE *reg){
     }
 
 
-    fwrite("0", sizeof(int), 1, reg); //escreve a LED no inicio do arquivo
+    //fwrite("0", sizeof(int), 1, reg); //escreve a LED no inicio do arquivo
 
-    //tam_campo = readfield(arq, num_insc);
+    fprintf(reg, "%d|", 0);
+
 
     fscanf(arq, "%d", &num_insc);
 
     tam_campo = num_insc;
 
+    buffer[0]='\0';
+
     while (tam_campo > 0) {   //transcreve o arquivo dados inline para o arquivo de registro
-        tam_campo = readfield(arq, nome);
-        tam_campo = readfield(arq, curso);
-        tam_campo = readfield(arq, nota);
+        fseek(arq, 1, SEEK_CUR);
 
         sprintf(numero,"%d", num_insc);
+
+        tam_campo = readfield(arq, nome);
+        tam_campo = readfield(arq, curso);
+
+        fscanf(arq, "%li", &nota);
 
         concatena(buffer, numero);
         concatena(buffer, nome);
         concatena(buffer, curso);
-        concatena(buffer, nota);
+        sprintf(numero, "%li", nota);
+        concatena(buffer, numero);
 
-        nota[0] = '\0';
+        buffer[strlen(buffer)] = '\0';
+
+        nota=0;
         curso[0]= '\0';
         nome[0]='\0';
         numero[0]='\0';
 
+
         tam_campo = strlen(buffer);
 
-        fwrite(&tam_campo, sizeof(int), 1, reg);
+
+        //fwrite(&tam_campo, sizeof(int), 1, reg);
+
+        fprintf(reg, "%d|", tam_campo);
 
         fputs(buffer, reg);
 
@@ -133,7 +146,9 @@ void importacao(FILE *arq, FILE *reg){
 
         num_insc = 0;
 
-        fscanf(arq, "%i", &num_insc);
+        fseek(arq, 1, SEEK_CUR);
+
+        fscanf(arq, "%d", &num_insc);
         tam_campo = num_insc;
     }
 
