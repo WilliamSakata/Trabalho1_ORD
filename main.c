@@ -98,9 +98,9 @@ void importacao(FILE *arq, FILE *reg){
     }
 
 
-    //fwrite("0", sizeof(int), 1, reg); //escreve a LED no inicio do arquivo
+    fwrite("-1", sizeof(int), 1, reg); //escreve a LED no inicio do arquivo
 
-    fprintf(reg, "%d|", 0);
+    //fprintf(reg, "%d|", 0);
 
 
     fscanf(arq, "%d", &num_insc);
@@ -136,9 +136,9 @@ void importacao(FILE *arq, FILE *reg){
         tam_campo = strlen(buffer);
 
 
-        //fwrite(&tam_campo, sizeof(int), 1, reg);
-
-        fprintf(reg, "%d|", tam_campo);
+        fwrite(&tam_campo, sizeof(int), 1, reg);
+        //fprintf(reg, "|");
+        //fprintf(reg, "%d|", tam_campo);
 
         fputs(buffer, reg);
 
