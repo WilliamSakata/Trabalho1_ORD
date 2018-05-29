@@ -117,12 +117,12 @@ void importacao(FILE *arq, FILE *reg){
         tam_campo = readfield(arq, nome);
         tam_campo = readfield(arq, curso);
 
-        fscanf(arq, "%li", &nota);
+        fscanf(arq, "%f", &nota);
 
         concatena(buffer, numero);
         concatena(buffer, nome);
         concatena(buffer, curso);
-        sprintf(numero, "%li", nota);
+        sprintf(numero, "%f", nota);
         concatena(buffer, numero);
 
         buffer[strlen(buffer)] = '\0';
@@ -153,11 +153,59 @@ void importacao(FILE *arq, FILE *reg){
     }
 
 }
-/*
-void insercao(FILE *arq, FILE *reg){
+
+int busca(FILE *reg, int tam){
+    int num, pos=1, find = 0;
+
+    fseek(reg, 1, SEEK_SET);
+    fscanf(reg, "%d", &num);
+
+    while (find == 0 && feof(reg)){
+        if(num >= tam){
+            find = 1;
+        } else{
+            fseek(reg, num, SEEK_CUR);
+            pos = num;
+        }
+    }
+    if(find == 1){
+
+    }
 
 }
 
+void insercao(FILE *arq, FILE *reg){
+    int num, tam, posicao;
+    char nome[30], curso[20], buffer[100], num_aux[15];
+    float nota;
+
+    printf("\nDigite o numero de inscricao: ");
+    scanf("%d", &num);
+
+    printf("\nDigite o nome: ");
+    scanf("%s", nome);
+
+    printf("\nDigite o nome do curso: ");
+    scanf("%s", curso);
+
+    printf("\nDigite a nota: ");
+    scanf("%f", &nota);
+
+    sprintf(num_aux, "%d", num);
+
+    concatena(buffer, num);
+    concatena(buffer, curso);
+
+    sprintf(num_aux,"%f", nota);
+    concatena(buffer, num_aux);
+
+    tam = strlen(buffer);
+
+    posicao = busca(reg,tam);
+
+}
+
+/*
 void remocao(FILE *arq, FILE *reg){
 
 }
