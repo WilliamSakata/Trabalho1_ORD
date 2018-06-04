@@ -13,12 +13,14 @@ void importacao(FILE *arq, FILE *reg);
 int readfield(FILE *arq, char str[]);
 
 int main(){
+    long pos;
+    char ch;
     int opcao;
     FILE *arq, *reg;
 
     printf("===Menu==\nEscolha a opcao:\n1-Importacao\n2-Insercao\n3-Remocao\n0-Sair\n=> ");
     scanf("%i", &opcao);
-
+    fflush(stdin);
     //menu(opcao, arq, reg); //passa a opção escolhida e dois ponteiros para o arquivo original dados inline e para o arquivo de registro
 
     arq = fopen("Dados-inline.txt", "r");
@@ -26,6 +28,12 @@ int main(){
 
     importacao(arq, reg);
 
+    fseek(reg, 3, SEEK_SET);
+    pos = ftell(reg);
+    printf("pos = %ld\n", pos);
+    fflush(stdin);
+    fscanf(reg, "%c", &ch);
+    printf("seek set = %c\n", ch);
     fclose(arq);
     fclose(reg);
 }
@@ -85,7 +93,7 @@ void concatena(char *primeiro, char *segundo){
 void importacao(FILE *arq, FILE *reg){
     char numero[20], nome[50], curso[25], buffer[100];
     int tam_campo, num_insc;
-    long int nota;
+    float nota;
     if(arq == NULL){
         arq = fopen("Dados-inline.txt", "r");
     }
@@ -154,14 +162,14 @@ void importacao(FILE *arq, FILE *reg){
 
 }
 
-int busca(FILE *reg, int tam){
+int busca_rem(FILE *reg, int num_insc){
     int num, pos=1, find = 0;
 
-    fseek(reg, 1, SEEK_SET);
+    fseek(reg, 8, SEEK_SET);
     fscanf(reg, "%d", &num);
 
     while (find == 0 && feof(reg)){
-        if(num >= tam){
+        if(num >= num_insc){
             find = 1;
         } else{
             fseek(reg, num, SEEK_CUR);
@@ -174,7 +182,7 @@ int busca(FILE *reg, int tam){
 
 }
 
-void insercao(FILE *arq, FILE *reg){
+/*void insercao(FILE *arq, FILE *reg){
     int num, tam, posicao;
     char nome[30], curso[20], buffer[100], num_aux[15];
     float nota;
@@ -201,11 +209,11 @@ void insercao(FILE *arq, FILE *reg){
 
     tam = strlen(buffer);
 
-    posicao = busca(reg,tam);
+    //posicao = busca(reg,tam);
 
 }
 
-/*
+
 void remocao(FILE *arq, FILE *reg){
 
 }
