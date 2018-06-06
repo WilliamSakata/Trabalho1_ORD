@@ -8,7 +8,7 @@ void concatena(char *primeiro, char *segundo);
 //void escreve_campo(char *str, FILE *reg);
 void menu(int opcao, FILE *arq, FILE *reg);
 void importacao(FILE *arq, FILE *reg);
-//void insercao(FILE *reg);
+void insercao(FILE *reg);
 void remocao(FILE *reg);
 int readfield(FILE *arq, char str[]);
 int busca_rem(FILE *reg, int num_insc);
@@ -81,17 +81,17 @@ int readfield(FILE *arq, char str[]){  //le o arquivo dados inline e determina o
         return i;
 }
 /*
-void escreve_campo(char *str, FILE *reg){
+void escreve_campo(char *str, FILE *reg){   //escreve o buffer no arquivo de registros
   fputs(str, reg);
   fputc(pipe, reg);
 }*/
 
-void concatena(char *primeiro, char *segundo){
+void concatena(char *primeiro, char *segundo){      //concatena duas strings e coloca um pipe no final
     strcat(primeiro, segundo);
     strcat(primeiro, pipe);
 }
 
-void importacao(FILE *arq, FILE *reg){
+void importacao(FILE *arq, FILE *reg){      //função de importação, pega do arquivo dados-inline e joga no arq-reg no formato pra leitura
     char numero[20], nome[50], curso[25], buffer[100];
     int tam_campo, num_insc;
     float nota;
@@ -129,29 +129,31 @@ void importacao(FILE *arq, FILE *reg){
         concatena(buffer, numero);
         concatena(buffer, nome);
         concatena(buffer, curso);
-        sprintf(numero, "%f", nota);
+
+        sprintf(numero, "%f", nota);    //converte o float pra string
+
         concatena(buffer, numero);
 
-        buffer[strlen(buffer)] = '\0';
+        buffer[strlen(buffer)] = '\0';  //zera o buffer
 
-        nota=0;
+        nota=0;             //zera as variaveis
         curso[0]= '\0';
         nome[0]='\0';
-        numero[0]='\0';
+        numero[0]='\0';     //pra colocar no arquivo reg como numero legivel
 
 
-        tam_campo = strlen(buffer);
+        tam_campo = strlen(buffer);     //pega o tamanho do campo
 
 
-        fwrite(tam_campo, sizeof(int), 1, reg);
+        fwrite(tam_campo, sizeof(int), 1, reg);     //escreve o tamanho do campo no arquivo de registro
 
-        fputs(buffer, reg);
+        fputs(buffer, reg);     //escreve o buffer
 
-        buffer[0] = '\0';
+        buffer[0] = '\0';       //zera o buffer
 
         num_insc = 0;
 
-        fseek(arq, 1, SEEK_CUR);
+        fseek(arq, 1, SEEK_CUR);        //precisa por que se nao pega o pipe
 
         fscanf(arq, "%d", &num_insc);
         tam_campo = num_insc;
@@ -159,21 +161,21 @@ void importacao(FILE *arq, FILE *reg){
 
 }
 
-int busca_rem(FILE *reg, int num_insc){
+int busca_rem(FILE *reg, int num_insc){ //função de busca para remover um registro
     int num, pos=4, find = 0, tam;
 
-    fseek(reg, 4, SEEK_SET);
-    fscanf(reg, "%d", &tam);
-    fscanf(reg, "%d", &num);
+    fseek(reg, 4, SEEK_SET);    //faz o seek pra 4 posicao por causa que os primeiros 4 bytes são da led
+    fscanf(reg, "%d", &tam);    //pega o tamanho do campo
+    fscanf(reg, "%d", &num);    //pega o numero de inscricao do campo
 
-    while (find == 0 && !feof(reg)){
+    while (find == 0 && !feof(reg)){    //enquanto nao achar o numero de inscrição certo e nao chegar no fim do arquivo repete
         if(num == num_insc){
             find = 1;
         } else{
-            fseek(reg, -4, SEEK_CUR);
+            fseek(reg, -4, SEEK_CUR);   //tem que fazer seek de -4 pra dar certo o seek, se não, ele vai estar 4 posicoes pra frente
 
             fseek(reg, tam, SEEK_CUR);
-            pos = pos+tam;
+            pos = pos+tam;      //incrementa a posição com o tamanho do campo
         }
     }
 
@@ -186,16 +188,16 @@ int busca_rem(FILE *reg, int num_insc){
 
 }
 
-int busca_insercao(FILE *reg, int tam){
+int busca_insercao(FILE *reg, int tam){     //faz a busca na led pra achar um espaço para inserir no arquivo reg
     int led, fit, tam_campo;
 
-    rewind(reg);
+    rewind(reg);    //volta p/ o inicio do arquivo reg
 
-    fscanf(reg, "%d", &led);
+    fscanf(reg, "%d", &led);    //pega o primeiro byteoffset da led
 
-    while(led != -1){
-        fseek(reg, -4, SEEK_CUR);
-        fscanf(reg, "%d", &tam_campo);
+    while(led != -1){       //enquanto não for o final da led
+        fseek(reg, led, SEEK_SET);  //faz o seek pro byteoffset da led
+        fscanf(reg, "%d", &tam_campo);  //pega o tamanho do campo
 
         if(tam_campo >= tam){
             fit = 1;
@@ -210,7 +212,7 @@ int busca_insercao(FILE *reg, int tam){
         return 0;
 }
 
-void insercao(FILE *reg){
+void insercao(FILE *reg){       //função de inserção de registros no arquivo reg
     int num, tam, posicao, led;
     char nome[30], curso[20], buffer[100], num_aux[15];
     float nota;
@@ -227,12 +229,12 @@ void insercao(FILE *reg){
     printf("\nDigite a nota: ");
     scanf("%f", &nota);
 
-    sprintf(num_aux, "%d", num);
+    sprintf(num_aux, "%d", num);    //converte o numero de insc de int p/ string
 
     concatena(buffer, num);
     concatena(buffer, curso);
 
-    sprintf(num_aux,"%f", nota);
+    sprintf(num_aux,"%f", nota);    //converte a nota de int p/ string
     concatena(buffer, num_aux);
 
     tam = strlen(buffer);
