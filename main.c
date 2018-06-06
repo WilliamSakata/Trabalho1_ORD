@@ -8,9 +8,10 @@ void concatena(char *primeiro, char *segundo);
 //void escreve_campo(char *str, FILE *reg);
 void menu(int opcao, FILE *arq, FILE *reg);
 void importacao(FILE *arq, FILE *reg);
-//void insercao(FILE *arq);
-//void remocao(FILE *arq);
+//void insercao(FILE *reg);
+void remocao(FILE *reg);
 int readfield(FILE *arq, char str[]);
+int busca_rem(FILE *reg, int num_insc);
 
 int main(){
     long pos;
@@ -45,10 +46,10 @@ void menu(int opcao, FILE *arq, FILE *reg){
         importacao(arq, reg);
         break;
       case 2:
-        insercao(arq, reg);
+        insercao(reg);
         break;
       case 3:
-        remocao(arq, reg);
+        remocao(reg);
         break;
       default:
         fclose(arq);
@@ -108,8 +109,6 @@ void importacao(FILE *arq, FILE *reg){
 
     fwrite("-1", sizeof(int), 1, reg); //escreve a LED no inicio do arquivo
 
-    //fprintf(reg, "%d|", 0);
-
 
     fscanf(arq, "%d", &num_insc);
 
@@ -144,9 +143,7 @@ void importacao(FILE *arq, FILE *reg){
         tam_campo = strlen(buffer);
 
 
-        fwrite(&tam_campo, sizeof(int), 1, reg);
-        //fprintf(reg, "|");
-        //fprintf(reg, "%d|", tam_campo);
+        fwrite(tam_campo, sizeof(int), 1, reg);
 
         fputs(buffer, reg);
 
@@ -163,27 +160,58 @@ void importacao(FILE *arq, FILE *reg){
 }
 
 int busca_rem(FILE *reg, int num_insc){
-    int num, pos=1, find = 0;
+    int num, pos=4, find = 0, tam;
 
-    fseek(reg, 8, SEEK_SET);
+    fseek(reg, 4, SEEK_SET);
+    fscanf(reg, "%d", &tam);
     fscanf(reg, "%d", &num);
 
-    while (find == 0 && feof(reg)){
-        if(num >= num_insc){
+    while (find == 0 && !feof(reg)){
+        if(num == num_insc){
             find = 1;
         } else{
-            fseek(reg, num, SEEK_CUR);
-            pos = num;
+            fseek(reg, -4, SEEK_CUR);
+
+            fseek(reg, tam, SEEK_CUR);
+            pos = pos+tam;
         }
     }
-    if(find == 1){
 
+    if(find == 1){
+        return pos;
+    } else{
+        printf("\nO candidato com o numero de inscricao %d, nao se encontra nesse arquivo", num_insc);
+        return 0;
     }
 
 }
 
-/*void insercao(FILE *arq, FILE *reg){
-    int num, tam, posicao;
+int busca_insercao(FILE *reg, int tam){
+    int led, fit, tam_campo;
+
+    rewind(reg);
+
+    fscanf(reg, "%d", &led);
+
+    while(led != -1){
+        fseek(reg, -4, SEEK_CUR);
+        fscanf(reg, "%d", &tam_campo);
+
+        if(tam_campo >= tam){
+            fit = 1;
+        } else{
+            fscanf(reg, "%d", &led);
+        }
+    }
+
+    if(fit)
+        return led;
+    else
+        return 0;
+}
+
+void insercao(FILE *reg){
+    int num, tam, posicao, led;
     char nome[30], curso[20], buffer[100], num_aux[15];
     float nota;
 
@@ -209,12 +237,44 @@ int busca_rem(FILE *reg, int num_insc){
 
     tam = strlen(buffer);
 
-    //posicao = busca(reg,tam);
+    posicao = busca_insercao(reg,tam);
 
+    if(posicao == 0){
+        fseek(reg, 0, SEEK_END);
+        fwrite(tam, sizeof(int), 1, reg);
+        fputs(buffer, reg);
+    }else {
+        rewind(reg);
+        fscanf(reg, "%d", &led);
+
+        while (led != -1 || led != posicao) {
+            fseek(reg, led, SEEK_SET);
+
+        }
+    }
 }
 
 
-void remocao(FILE *arq, FILE *reg){
+void remocao(FILE *reg){
+    int num_insc, pos, tam, led, anterior;
 
+    printf("\nDigite o numero de inscricao do candidato que deseja remover: ");
+    scanf("%d", &num_insc);
+
+    pos = busca_rem(reg, num_insc);
+
+    rewind(reg);
+    fscanf(reg, "%d", &led);
+
+    while (led != -1){
+        anterior = led;
+        fseek(reg, led, SEEK_SET);
+        fscanf(reg, "%d", &led);
+    }
+
+    fseek(reg, led, SEEK_SET);
+    fwrite("-1", sizeof(int), 1, reg);
+
+    fseek(reg, anterior, SEEK_SET);
+    fwrite(led, sizeof(int), 1, reg);
 }
-*/
