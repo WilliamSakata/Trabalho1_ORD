@@ -5,7 +5,6 @@
 #define pipe "|"
 
 void concatena(char *primeiro, char *segundo);
-//void escreve_campo(char *str, FILE *reg);
 void menu(int opcao, FILE *arq, FILE *reg);
 void importacao(FILE *arq, FILE *reg);
 void insercao(FILE *reg);
@@ -38,7 +37,7 @@ int main(){
     fclose(arq);
     fclose(reg);
 }
-/*
+
 void menu(int opcao, FILE *arq, FILE *reg){
   while(opcao != '0'){
     switch (opcao) {
@@ -55,11 +54,12 @@ void menu(int opcao, FILE *arq, FILE *reg){
         fclose(arq);
         fclose(reg);
         break;
-      printf("===Menu==\nEscolha a opcao:\n1-Importacao\n2-Insercao\n3-Remocao\n0-Sair\n=> ");
     }
+      printf("===Menu==\nEscolha a opcao:\n1-Importacao\n2-Insercao\n3-Remocao\n0-Sair\n=> ");
+    scanf("%d", &opcao);
   }
 }
-*/
+
 int readfield(FILE *arq, char str[]){  //le o arquivo dados inline e determina o tamanho do campo entre os pipes e salva o que foi lido na string str e retorna o tamanho do campo
     int i;
     char ch;
@@ -80,11 +80,6 @@ int readfield(FILE *arq, char str[]){  //le o arquivo dados inline e determina o
     else
         return i;
 }
-/*
-void escreve_campo(char *str, FILE *reg){   //escreve o buffer no arquivo de registros
-  fputs(str, reg);
-  fputc(pipe, reg);
-}*/
 
 void concatena(char *primeiro, char *segundo){      //concatena duas strings e coloca um pipe no final
     strcat(primeiro, segundo);
@@ -213,7 +208,7 @@ int busca_insercao(FILE *reg, int tam){     //faz a busca na led pra achar um es
 }
 
 void insercao(FILE *reg){       //função de inserção de registros no arquivo reg
-    int num, tam, posicao, led;
+    int num, tam, posicao, led, anterior;
     char nome[30], curso[20], buffer[100], num_aux[15];
     float nota;
 
@@ -241,17 +236,38 @@ void insercao(FILE *reg){       //função de inserção de registros no arquivo
 
     posicao = busca_insercao(reg,tam);
 
-    if(posicao == 0){
+    if(posicao == 0){       //se não tem lugar disponivel na led, coloca o novo registro no final
         fseek(reg, 0, SEEK_END);
         fwrite(tam, sizeof(int), 1, reg);
         fputs(buffer, reg);
     }else {
         rewind(reg);
-        fscanf(reg, "%d", &led);
+        fscanf(reg, "%d", &led);    //arrumando a led
 
-        while (led != -1 || led != posicao) {
+        while (led != -1 || led != posicao) {   //enquanto nao chegou o final da led e nao chegou na posicao faz o seek p/ o byteoffset da led e salva o anterior
             fseek(reg, led, SEEK_SET);
+            anterior = led;
+            fseek(reg, 4, SEEK_CUR);
+            fscanf(reg, "%d", &led);
+        }
 
+        fseek(reg, led, SEEK_SET);
+        fscanf(reg, "%d", &led);
+        fseek(reg, -4, SEEK_CUR);   //tem que voltar 4 bytes pois tem que colocar o tamanho do campo
+
+        fwrite(tam, sizeof(int), 1, reg);
+        fputs(buffer, reg);
+
+        fseek(reg, led+4, SEEK_SET);       //seek de led + 4 pra arrumar o -4 anterior
+        fscanf(reg, "%d", &led);
+        fwrite(anterior, "%d", 1, reg);
+        anterior = led;
+
+        while (led != -1){      //arruma o resto da led ate o final
+            fseek(reg, led, SEEK_SET);
+            fscanf(reg, "%d", &led);
+            fwrite(anterior, "%d", 1, reg);
+            anterior = led;
         }
     }
 }
@@ -263,20 +279,28 @@ void remocao(FILE *reg){
     printf("\nDigite o numero de inscricao do candidato que deseja remover: ");
     scanf("%d", &num_insc);
 
-    pos = busca_rem(reg, num_insc);
+    pos = busca_rem(reg, num_insc);     //pega o byteoffset do registro
 
-    rewind(reg);
-    fscanf(reg, "%d", &led);
-
-    while (led != -1){
-        anterior = led;
-        fseek(reg, led, SEEK_SET);
+    if(pos != 0) {
+        rewind(reg);
         fscanf(reg, "%d", &led);
+
+        if (led == -1) {        //tratamento da primeira remoção
+            fwrite(pos, sizeof(int), 1, reg);   //escreve o byteoffset do registro removido
+            fseek(reg, pos, reg);   //faz o seek p/ o byteoffset do registro e coloca -1 na led
+            fwrite("-1", sizeof(int), 1, reg);
+        } else {
+            while (led != -1) {
+                anterior = led;
+                fseek(reg, led, SEEK_SET);
+                fscanf(reg, "%d", &led);
+            }
+
+            fseek(reg, led, SEEK_SET);
+            fwrite("-1", sizeof(int), 1, reg);
+
+            fseek(reg, anterior, SEEK_SET);
+            fwrite(led, sizeof(int), 1, reg);
+        }
     }
-
-    fseek(reg, led, SEEK_SET);
-    fwrite("-1", sizeof(int), 1, reg);
-
-    fseek(reg, anterior, SEEK_SET);
-    fwrite(led, sizeof(int), 1, reg);
 }
