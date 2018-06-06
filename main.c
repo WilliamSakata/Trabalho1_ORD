@@ -5,7 +5,7 @@
 #define pipe "|"
 
 void concatena(char *primeiro, char *segundo);
-void menu(int opcao, FILE *arq, FILE *reg);
+void menu(int opcao, FILE *arq, FILE **reg);
 void importacao(FILE *arq, FILE *reg);
 void insercao(FILE *reg);
 void remocao(FILE *reg);
@@ -21,46 +21,40 @@ int main(){
     printf("===Menu==\nEscolha a opcao:\n1-Importacao\n2-Insercao\n3-Remocao\n0-Sair\n=> ");
     scanf("%i", &opcao);
     fflush(stdin);
-    //menu(opcao, arq, reg); //passa a opção escolhida e dois ponteiros para o arquivo original dados inline e para o arquivo de registro
 
     arq = fopen("Dados-inline.txt", "r");
     reg = fopen("Arq-reg.txt", "w");
 
-    importacao(arq, reg);
+    menu(opcao, arq, &reg); //passa a opção escolhida e dois ponteiros para o arquivo original dados inline e para o arquivo de registro
 
-    fseek(reg, 3, SEEK_SET);
-    pos = ftell(reg);
-    printf("pos = %ld\n", pos);
-    fflush(stdin);
-    fscanf(reg, "%c", &ch);
-    printf("seek set = %c\n", ch);
     fclose(arq);
     fclose(reg);
 }
 
-void menu(int opcao, FILE *arq, FILE *reg){
-  while(opcao != '0'){
+void menu(int opcao, FILE *arq, FILE **reg){
+  while(opcao != 0){
     switch (opcao) {
       case 1:
-        importacao(arq, reg);
+        importacao(arq, *reg);
+        *reg = fopen("Arq-reg.txt", "rb+");
         break;
       case 2:
-        insercao(reg);
+        insercao(*reg);
         break;
       case 3:
-        remocao(reg);
+        remocao(*reg);
         break;
       default:
         fclose(arq);
-        fclose(reg);
+        fclose(*reg);
         break;
     }
-      printf("===Menu==\nEscolha a opcao:\n1-Importacao\n2-Insercao\n3-Remocao\n0-Sair\n=> ");
+    printf("===Menu==\nEscolha a opcao:\n1-Importacao\n2-Insercao\n3-Remocao\n0-Sair\n=> ");
     scanf("%d", &opcao);
   }
 }
 
-int readfield(FILE *arq, char str[]){  //le o arquivo dados inline e determina o tamanho do campo entre os pipes e salva o que foi lido na string str e retorna o tamanho do campo
+int readfield(FILE *arq, char str[]){  //le o arquivo dados inline e determina o tamanho do campo salva o que foi lido na string str e retorna o tamanho do campo
     int i;
     char ch;
 
@@ -88,7 +82,7 @@ void concatena(char *primeiro, char *segundo){      //concatena duas strings e c
 
 void importacao(FILE *arq, FILE *reg){      //função de importação, pega do arquivo dados-inline e joga no arq-reg no formato pra leitura
     char numero[20], nome[50], curso[25], buffer[100];
-    int tam_campo, num_insc;
+    int tam_campo, num_insc, led = -1;
     float nota;
     if(arq == NULL){
         arq = fopen("Dados-inline.txt", "r");
@@ -102,7 +96,7 @@ void importacao(FILE *arq, FILE *reg){      //função de importação, pega do 
     }
 
 
-    fwrite("-1", sizeof(int), 1, reg); //escreve a LED no inicio do arquivo
+    fwrite(&led, sizeof(int), 1, reg); //escreve a LED no inicio do arquivo
 
 
     fscanf(arq, "%d", &num_insc);
@@ -140,7 +134,7 @@ void importacao(FILE *arq, FILE *reg){      //função de importação, pega do 
         tam_campo = strlen(buffer);     //pega o tamanho do campo
 
 
-        fwrite(tam_campo, sizeof(int), 1, reg);     //escreve o tamanho do campo no arquivo de registro
+        fwrite(&tam_campo, sizeof(int), 1, reg);     //escreve o tamanho do campo no arquivo de registro
 
         fputs(buffer, reg);     //escreve o buffer
 
@@ -153,28 +147,67 @@ void importacao(FILE *arq, FILE *reg){      //função de importação, pega do 
         fscanf(arq, "%d", &num_insc);
         tam_campo = num_insc;
     }
+    fclose(reg);
 
 }
 
+int read_rec(FILE * reg, char * buffer){
+    int tam;
+
+    if (fread(&tam, sizeof(int), 1, reg) == 0) {
+        return 0;
+    }
+    fread(buffer, tam, 1, reg);
+    buffer[tam] = '\0';
+    return tam;
+}
+
 int busca_rem(FILE *reg, int num_insc){ //função de busca para remover um registro
-    int num, pos=4, find = 0, tam;
+    int num, pos=4, find = 0, tam, i=0;
+    char ch, num_str[10];
+    char buffer[250];
 
     fseek(reg, 4, SEEK_SET);    //faz o seek pra 4 posicao por causa que os primeiros 4 bytes são da led
-    fscanf(reg, "%d", &tam);    //pega o tamanho do campo
-    fscanf(reg, "%d", &num);    //pega o numero de inscricao do campo
 
-    while (find == 0 && !feof(reg)){    //enquanto nao achar o numero de inscrição certo e nao chegar no fim do arquivo repete
-        if(num == num_insc){
-            find = 1;
-        } else{
-            fseek(reg, -4, SEEK_CUR);   //tem que fazer seek de -4 pra dar certo o seek, se não, ele vai estar 4 posicoes pra frente
-
-            fseek(reg, tam, SEEK_CUR);
-            pos = pos+tam;      //incrementa a posição com o tamanho do campo
-        }
-    }
+//    fread(&tam, sizeof(int), 1, reg);
+//
+//    ch = fgetc(reg);
+//
+//    while(ch != '|'){  //como o num de insc está no formato de string, tem que fazer isso p/ converter p/ int
+//        num_str[i]=ch;
+//        i++;
+//        ch = fgetc(reg);
+//    }
+//
+//    num = atoi(num_str);
+//
+//
+//    while (find == 0 && !feof(reg)){    //enquanto nao achar o numero de inscrição certo e nao chegar no fim do arquivo repete
+//        i=0;
+//        if(num == num_insc){
+//            find = 1;
+//        } else{
+//            fseek(reg, -sizeof(num_str), SEEK_CUR);   //tem que fazer seek de -4 pra dar certo o seek, se não, ele vai estar 4 posicoes pra frente
+//
+//            fseek(reg, tam, SEEK_CUR);
+//
+//            pos = pos+tam;      //incrementa a posição com o tamanho do campo
+//            fscanf(reg, "%d", &tam);
+//
+//            ch = fgetc(reg);
+//
+//            while(ch != '|'){
+//                num_str[i]=ch;
+//                i++;
+//                ch = fgetc(reg);
+//            }
+//
+//            num = atoi(num_str);
+//        }
+//    }
 
     if(find == 1){
+        printf("\nAchou pos: %d", pos);
         return pos;
     } else{
         printf("\nO candidato com o numero de inscricao %d, nao se encontra nesse arquivo", num_insc);
@@ -226,7 +259,7 @@ void insercao(FILE *reg){       //função de inserção de registros no arquivo
 
     sprintf(num_aux, "%d", num);    //converte o numero de insc de int p/ string
 
-    concatena(buffer, num);
+    concatena(buffer, num_aux);
     concatena(buffer, curso);
 
     sprintf(num_aux,"%f", nota);    //converte a nota de int p/ string
@@ -238,7 +271,7 @@ void insercao(FILE *reg){       //função de inserção de registros no arquivo
 
     if(posicao == 0){       //se não tem lugar disponivel na led, coloca o novo registro no final
         fseek(reg, 0, SEEK_END);
-        fwrite(tam, sizeof(int), 1, reg);
+        fwrite(&tam, sizeof(int), 1, reg);
         fputs(buffer, reg);
     }else {
         rewind(reg);
@@ -255,18 +288,18 @@ void insercao(FILE *reg){       //função de inserção de registros no arquivo
         fscanf(reg, "%d", &led);
         fseek(reg, -4, SEEK_CUR);   //tem que voltar 4 bytes pois tem que colocar o tamanho do campo
 
-        fwrite(tam, sizeof(int), 1, reg);
+        fwrite(&tam, sizeof(int), 1, reg);
         fputs(buffer, reg);
 
         fseek(reg, led+4, SEEK_SET);       //seek de led + 4 pra arrumar o -4 anterior
         fscanf(reg, "%d", &led);
-        fwrite(anterior, "%d", 1, reg);
+        fwrite(&anterior, sizeof(int), 1, reg);
         anterior = led;
 
         while (led != -1){      //arruma o resto da led ate o final
             fseek(reg, led, SEEK_SET);
             fscanf(reg, "%d", &led);
-            fwrite(anterior, "%d", 1, reg);
+            fwrite(&anterior, sizeof(int), 1, reg);
             anterior = led;
         }
     }
@@ -286,8 +319,8 @@ void remocao(FILE *reg){
         fscanf(reg, "%d", &led);
 
         if (led == -1) {        //tratamento da primeira remoção
-            fwrite(pos, sizeof(int), 1, reg);   //escreve o byteoffset do registro removido
-            fseek(reg, pos, reg);   //faz o seek p/ o byteoffset do registro e coloca -1 na led
+            fwrite(&pos, sizeof(int), 1, reg);   //escreve o byteoffset do registro removido
+            fseek(reg, pos, SEEK_SET);   //faz o seek p/ o byteoffset do registro e coloca -1 na led
             fwrite("-1", sizeof(int), 1, reg);
         } else {
             while (led != -1) {
@@ -300,7 +333,7 @@ void remocao(FILE *reg){
             fwrite("-1", sizeof(int), 1, reg);
 
             fseek(reg, anterior, SEEK_SET);
-            fwrite(led, sizeof(int), 1, reg);
+            fwrite(&led, sizeof(int), 1, reg);
         }
     }
 }
