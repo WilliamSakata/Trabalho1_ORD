@@ -10,7 +10,7 @@ void importacao(FILE *arq, FILE *reg);
 void insercao(FILE *reg);
 void remocao(FILE *reg);
 int readfield(FILE *arq, char str[]);
-int busca_rem(FILE *reg, int num_insc);
+int busca_rem(FILE *reg, char *num_insc);
 
 int main(){
     long pos;
@@ -51,6 +51,7 @@ void menu(int opcao, FILE *arq, FILE **reg){
     }
     printf("===Menu==\nEscolha a opcao:\n1-Importacao\n2-Insercao\n3-Remocao\n0-Sair\n=> ");
     scanf("%d", &opcao);
+    fflush(stdin);
   }
 }
 
@@ -154,6 +155,7 @@ void importacao(FILE *arq, FILE *reg){      //função de importação, pega do 
 int read_rec(FILE * reg, char * buffer){
     int tam;
 
+    printf("\nEntrou read_rec");
     if (fread(&tam, sizeof(int), 1, reg) == 0) {
         return 0;
     }
@@ -162,12 +164,29 @@ int read_rec(FILE * reg, char * buffer){
     return tam;
 }
 
-int busca_rem(FILE *reg, int num_insc){ //função de busca para remover um registro
-    int num, pos=4, find = 0, tam, i=0;
-    char ch, num_str[10];
+int busca_rem(FILE *reg, char *num_insc){ //função de busca para remover um registro
+    int  pos=4, find = 0, tam, i=0;
+    char ch, num_str[10], num[20];
     char buffer[250];
+    char *field;
 
     fseek(reg, 4, SEEK_SET);    //faz o seek pra 4 posicao por causa que os primeiros 4 bytes são da led
+
+    while (find == 0 && (tam = read_rec(reg, buffer) > 0)){
+        printf("\nEntrou while");
+        field = strtok(buffer, pipe);
+
+
+        if (strcmp(field, num_insc) == 0){
+            find = 1;
+        } else{
+            fseek(reg, -sizeof(field), SEEK_CUR);
+            fseek(reg, tam, SEEK_CUR);
+            pos = pos+tam;
+            tam = read_rec(reg, buffer);
+        }
+        printf("\nTa no while busca rem");
+    }
 
 //    fread(&tam, sizeof(int), 1, reg);
 //
@@ -210,7 +229,7 @@ int busca_rem(FILE *reg, int num_insc){ //função de busca para remover um regi
         printf("\nAchou pos: %d", pos);
         return pos;
     } else{
-        printf("\nO candidato com o numero de inscricao %d, nao se encontra nesse arquivo", num_insc);
+        printf("\nO candidato com o numero de inscricao %s, nao se encontra nesse arquivo", num_insc);
         return 0;
     }
 
@@ -307,10 +326,17 @@ void insercao(FILE *reg){       //função de inserção de registros no arquivo
 
 
 void remocao(FILE *reg){
-    int num_insc, pos, tam, led, anterior;
+    int pos, tam, led, anterior;
+    char num_insc[20];
+
+    fflush(stdin);
+
+    num_insc[0]='\0';
 
     printf("\nDigite o numero de inscricao do candidato que deseja remover: ");
-    scanf("%d", &num_insc);
+    scanf("%s", num_insc);
+
+    //fgets(num_insc, 20, stdin);
 
     pos = busca_rem(reg, num_insc);     //pega o byteoffset do registro
 
