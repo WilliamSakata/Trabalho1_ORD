@@ -264,17 +264,30 @@ void insercao(FILE *reg){       //função de inserção de registros no arquivo
     char nome[30], curso[20], buffer[100], num_aux[15];
     float nota;
 
+    nome[0]='\0';
+    curso[0]='\0';
+    buffer[0]='\0';
+    num_aux[0]='\0';
+
     printf("\nDigite o numero de inscricao: ");
     scanf("%d", &num);
+    fflush(stdin);
 
     printf("\nDigite o nome: ");
-    scanf("%s", nome);
+    //fscanf(stdin, "%s", nome);
+    fgets(nome, 30, stdin);
+    fflush(stdin);
+
+    printf("\nNome: %s", nome);
 
     printf("\nDigite o nome do curso: ");
-    scanf("%s", curso);
+    fgets(curso, 20, stdin);
+    //scanf("%s", curso);
+    fflush(stdin);
 
     printf("\nDigite a nota: ");
     scanf("%f", &nota);
+    fflush(stdin);
 
     sprintf(num_aux, "%d", num);    //converte o numero de insc de int p/ string
 
