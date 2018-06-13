@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdio_ext.h>
 
 #define pipe "|"
 
@@ -149,6 +150,7 @@ void importacao(FILE *arq, FILE *reg){      //função de importação, pega do 
         tam_campo = num_insc;
     }
     fclose(reg);
+    printf("\n\n\n\n\n\n\n\n\n\n");
 
 }
 
@@ -238,7 +240,10 @@ int busca_rem(FILE *reg, char *num_insc){ //função de busca para remover um re
 int busca_insercao(FILE *reg, int tam){     //faz a busca na led pra achar um espaço para inserir no arquivo reg
     int led, fit, tam_campo;
 
+    printf("\nEntrou busca insercao");
     rewind(reg);    //volta p/ o inicio do arquivo reg
+
+
 
     fscanf(reg, "%d", &led);    //pega o primeiro byteoffset da led
 
@@ -260,8 +265,8 @@ int busca_insercao(FILE *reg, int tam){     //faz a busca na led pra achar um es
 }
 
 void insercao(FILE *reg){       //função de inserção de registros no arquivo reg
-    int num, tam, posicao, led, anterior;
-    char nome[30], curso[20], buffer[100], num_aux[15];
+    int tam, posicao=0, led, anterior, num;
+    char nome[30], curso[30], buffer[200], num_aux[8];
     float nota;
 
     nome[0]='\0';
@@ -269,37 +274,42 @@ void insercao(FILE *reg){       //função de inserção de registros no arquivo
     buffer[0]='\0';
     num_aux[0]='\0';
 
+    __fpurge(stdin);
     printf("\nDigite o numero de inscricao: ");
     scanf("%d", &num);
-    fflush(stdin);
+    snprintf(num_aux,8 , "%d", num);    //converte o numero de inscricao de int para string
 
     printf("\nDigite o nome: ");
-    //fscanf(stdin, "%s", nome);
+    __fpurge(stdin);
     fgets(nome, 30, stdin);
-    fflush(stdin);
 
-    printf("\nNome: %s", nome);
 
     printf("\nDigite o nome do curso: ");
-    fgets(curso, 20, stdin);
-    //scanf("%s", curso);
-    fflush(stdin);
+    fgets(curso, 30, stdin);
+    __fpurge(stdin);
 
     printf("\nDigite a nota: ");
     scanf("%f", &nota);
     fflush(stdin);
 
-    sprintf(num_aux, "%d", num);    //converte o numero de insc de int p/ string
+    strcat(buffer,num_aux);
+    strcat(buffer, pipe);
 
-    concatena(buffer, num_aux);
-    concatena(buffer, curso);
+    strcat(buffer, curso);
+    strcat(buffer, pipe);
 
-    sprintf(num_aux,"%f", nota);    //converte a nota de int p/ string
-    concatena(buffer, num_aux);
+    snprintf(num_aux,8 ,"%.3f", nota);    //converte a nota de float p/ string
+
+    strcat(buffer, num_aux);
+    strcat(buffer, "|");
+    printf("buffer = %s", buffer);
+
 
     tam = strlen(buffer);
 
     posicao = busca_insercao(reg,tam);
+
+    printf("\nPassou busca_insercao");
 
     if(posicao == 0){       //se não tem lugar disponivel na led, coloca o novo registro no final
         fseek(reg, 0, SEEK_END);
