@@ -157,7 +157,6 @@ void importacao(FILE *arq, FILE *reg){      //função de importação, pega do 
 int read_rec(FILE * reg, char * buffer){
     int tam;
 
-    printf("\nEntrou read_rec");
     if (fread(&tam, sizeof(int), 1, reg) == 0) {
         return 0;
     }
@@ -292,24 +291,18 @@ void insercao(FILE *reg){       //função de inserção de registros no arquivo
     scanf("%f", &nota);
     fflush(stdin);
 
-    strcat(buffer,num_aux);
-    strcat(buffer, pipe);
+    concatena(buffer, num_aux);
 
-    strcat(buffer, curso);
-    strcat(buffer, pipe);
+    concatena(buffer, curso);
 
     snprintf(num_aux,8 ,"%.3f", nota);    //converte a nota de float p/ string
 
-    strcat(buffer, num_aux);
-    strcat(buffer, "|");
-    printf("buffer = %s", buffer);
-
+    concatena(buffer, num_aux);
 
     tam = strlen(buffer);
 
     posicao = busca_insercao(reg,tam);
 
-    printf("\nPassou busca_insercao");
 
     if(posicao == 0){       //se não tem lugar disponivel na led, coloca o novo registro no final
         fseek(reg, 0, SEEK_END);
@@ -352,7 +345,7 @@ void remocao(FILE *reg){
     int pos, tam, led, anterior;
     char num_insc[20];
 
-    fflush(stdin);
+    __fpurge(stdin);
 
     num_insc[0]='\0';
 
